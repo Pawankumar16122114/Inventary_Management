@@ -87,10 +87,8 @@ source venv/bin/activate
 ### 3. Install Dependencies
 
 ```bash
-pip install django
+pip install -r requirements.txt
 ```
-
-> If you have a `requirements.txt`, run: `pip install -r requirements.txt`
 
 ### 4. Apply Database Migrations
 
@@ -135,13 +133,150 @@ Visit **http://127.0.0.1:8000** in your browser.
 
 ---
 
+## 🔐 Authentication — Sign In & Sign Up
+
+### 🔑 Sign In (Login)
+
+The system uses **Django's built-in username & password authentication**.
+
+| Field      | Type             | Required |
+|------------|------------------|----------|
+| `username` | Text             | ✅ Yes   |
+| `password` | Password (masked)| ✅ Yes   |
+
+**How it works:**
+1. Navigate to **http://127.0.0.1:8000/login/**
+2. Enter your **username** and **password**
+3. On success → redirected to the **Dashboard**
+4. On failure → error message `Invalid username or password.` is shown
+5. Already logged-in users are automatically redirected to the dashboard
+
+> 💡 All pages are protected. Unauthenticated users are automatically redirected to `/login/`.
+
+---
+
+### 📝 Sign Up (Register a New User)
+
+This system does **not** have a public self-registration page. New user accounts are created by an **Admin** through one of the following methods:
+
+#### Method 1 — Django Admin Panel *(Recommended)*
+
+1. Go to **http://127.0.0.1:8000/admin/**
+2. Log in with your superuser credentials
+3. Click **Users → Add User**
+4. Fill in:
+   - **Username** (required)
+   - **Password** (set and confirm)
+   - **Email** (optional)
+   - **Role** — choose `Admin`, `Manager`, or `Staff`
+5. Click **Save**
+
+#### Method 2 — Django Management Command (Terminal)
+
+Create a superuser (Admin role) from the command line:
+
+```bash
+cd inventory_system
+python manage.py createsuperuser
+```
+
+Follow the prompts:
+```
+Username: admin
+Email address: admin@example.com
+Password: ••••••••
+Password (again): ••••••••
+Superuser created successfully.
+```
+
+#### Method 3 — Django Shell (Advanced)
+
+Create any user with a specific role programmatically:
+
+```bash
+python manage.py shell
+```
+
+```python
+from inventory.models import CustomUser
+
+# Create a Manager
+user = CustomUser.objects.create_user(
+    username='manager1',
+    password='SecurePass123',
+    email='manager1@example.com',
+    role='manager'           # Options: 'admin', 'manager', 'staff'
+)
+user.save()
+print(f'User {user.username} created with role: {user.role}')
+```
+
+---
+
+### 🔓 Sign Out (Logout)
+
+- Click the **Logout** button in the navigation bar, or
+- Visit **http://127.0.0.1:8000/logout/** directly
+- You will be redirected back to the login page with a confirmation message
+
+---
+
+### 🔄 Session Management
+
+| Behaviour                | Details                                      |
+|--------------------------|----------------------------------------------|
+| Session backend          | Django database-backed sessions              |
+| Session storage          | `django_session` table in SQLite             |
+| Authenticated redirect   | `/dashboard/` after successful login         |
+| Unauthenticated redirect | `/login/` for all protected routes           |
+| CSRF Protection          | Enabled on all POST forms via `{% csrf_token %}` |
+
+---
+
+### 🔑 Password Validation Rules
+
+Django's built-in validators are enforced on password creation:
+
+| Rule                        | Description                              |
+|-----------------------------|------------------------------------------|
+| User Attribute Similarity   | Password must not be too similar to username/email |
+| Minimum Length              | At least **8 characters**                |
+| Common Password             | Cannot be a commonly used password       |
+| Numeric Only                | Password cannot be entirely numeric      |
+
+---
+
 ## 👥 User Roles & Permissions
 
-| Role      | Access Level                                      |
-|-----------|---------------------------------------------------|
-| **Admin** | Full access — manage users, all data, settings    |
-| **Manager** | Manage products, orders, transactions, reports  |
-| **Staff** | View products and create stock transactions       |
+| Role        | Access Level                                                             |
+|-------------|--------------------------------------------------------------------------|
+| **Admin**   | Full access — create/delete users, manage all data, delete any record    |
+| **Manager** | Create & edit products, categories, suppliers, orders, transactions, reports |
+| **Staff**   | View-only access to products, categories, suppliers + create stock transactions |
+
+### Role-Based Access Matrix
+
+| Feature                  | Staff | Manager | Admin |
+|--------------------------|:-----:|:-------:|:-----:|
+| View Dashboard           | ✅    | ✅      | ✅    |
+| View Products            | ✅    | ✅      | ✅    |
+| Add / Edit Products      | ❌    | ✅      | ✅    |
+| Delete Products          | ❌    | ❌      | ✅    |
+| View Categories          | ✅    | ✅      | ✅    |
+| Add / Edit Categories    | ❌    | ✅      | ✅    |
+| Delete Categories        | ❌    | ❌      | ✅    |
+| View Suppliers           | ✅    | ✅      | ✅    |
+| Add / Edit Suppliers     | ❌    | ✅      | ✅    |
+| Delete Suppliers         | ❌    | ❌      | ✅    |
+| View Transactions        | ✅    | ✅      | ✅    |
+| Create Transactions      | ❌    | ✅      | ✅    |
+| View Purchase Orders     | ✅    | ✅      | ✅    |
+| Create / Update POs      | ❌    | ✅      | ✅    |
+| Delete Purchase Orders   | ❌    | ❌      | ✅    |
+| View Sales Orders        | ✅    | ✅      | ✅    |
+| Create / Update SOs      | ❌    | ✅      | ✅    |
+| Delete Sales Orders      | ❌    | ❌      | ✅    |
+| View Reports & Export    | ✅    | ✅      | ✅    |
 
 ---
 
