@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}Dashboard — Inventory System{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Real-time inventory overview{% endblock %}
+{% block current_page %}Dashboard{% endblock %}
+
+{% block content %}
+{% total_products as tp %}
+{% low_stock_count as lsc %}
+{% stock_value as sv %}
+{% potential_revenue as pr %}
+{% total_suppliers as ts %}
+{% pending_po_count as ppc %}
+{% pending_so_count as psc %}
+
+<div class="stat-cards">
+    <div class="glass-card stat-card blue">
+        <div class="stat-card-icon"><i class="fas fa-box"></i></div>
+        <div class="stat-card-value"><span data-count-to="{{ tp }}">{{ tp }}</span></div>
+        <div class="stat-card-label">Total Products</div>
+        <div class="stat-trend up"><i class="fas fa-circle"></i> All items</div>
+    </div>
+    <div class="glass-card stat-card green">
+        <div class="stat-card-icon"><i class="fas fa-indian-rupee-sign"></i></div>
+        <div class="stat-card-value">{{ sv|currency }}</div>
+        <div class="stat-card-label">Inventory Value</div>
+        <div class="stat-trend up"><i class="fas fa-arrow-up"></i> At cost</div>
+    </div>
+    <div class="glass-card stat-card cyan">
+        <div class="stat-card-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-card-value">{{ pr|currency }}</div>
+        <div class="stat-card-label">Potential Revenue</div>
+        <div class="stat-trend up"><i class="fas fa-arrow-up"></i> At MRP</div>
+    </div>
+    <div class="glass-card stat-card purple">
+        <div class="stat-card-icon"><i class="fas fa-tags"></i></div>
+        <div class="stat-card-value">{{ ts }}</div>
+        <div class="stat-card-label">Suppliers</div>
+        <div class="stat-trend up"><i class="fas fa-circle"></i> Active</div>
+    </div>
+    <div class="glass-card stat-card orange">
+        <div class="stat-card-icon"><i class="fas fa-cart-plus"></i></div>
+        <div class="stat-card-value">{{ ppc }}</div>
+        <div class="stat-card-label">Pending POs</div>
+        <div class="stat-trend up"><i class="fas fa-circle"></i> In progress</div>
+    </div>
+    <div class="glass-card stat-card {% if lsc > 0 %}red{% else %}green{% endif %}">
+        <div class="stat-card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-card-value">{{ lsc }}</div>
+        <div class="stat-card-label">Low Stock Alerts</div>
+        <div class="stat-trend {% if lsc > 0 %}down{% else %}up{% endif %}">
+            <i class="fas fa-{% if lsc > 0 %}arrow-down{% else %}check{% endif %}"></i>
+            {% if lsc > 0 %}Needs attention{% else %}All clear{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="quick-actions-grid">
+    <a href="{% url 'product_create' %}" class="glass-card quick-action-card">
+        <i class="fas fa-plus"></i>
+        <span>Add Product</span>
+    </a>
+    <a href="{% url 'transaction_create' %}" class="glass-card quick-action-card">
+        <i class="fas fa-arrows-left-right"></i>
+        <span>Stock Movement</span>
+    </a>
+    <a href="{% url 'po_create' %}" class="glass-card quick-action-card">
+        <i class="fas fa-cart-plus"></i>
+        <span>New PO</span>
+    </a>
+    <a href="{% url 'reports' %}" class="glass-card quick-action-card">
+        <i class="fas fa-file-alt"></i>
+        <span>Reports</span>
+    </a>
+</div>
+
+<div class="charts-grid" data-chart-url="{% url 'chart_data' %}">
+    <div class="glass-card chart-card">
+        <h3><i class="fas fa-chart-bar" style="color:var(--accent-blue);"></i>Stock by Category</h3>
+        <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+    <div class="glass-card chart-card">
+        <h3><i class="fas fa-chart-doughnut" style="color:var(--accent-purple);"></i>Transaction Types</h3>
+        <div class="chart-container">
+            <canvas id="transactionChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{% if low_stock_products %}
+<div class="glass-card" style="padding:24px;margin-bottom:28px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--accent-red);">
+        <i class="fas fa-exclamation-triangle"></i> Low Stock Alerts
+        <span class="badge badge-red" style="margin-left:auto;">{{ low_stock_products|length }} items</span>
+    </h3>
+    <div class="low-stock-list">
+        {% for p in low_stock_products %}
+        <div class="low-stock-item">
+            <div class="product-info">
+                <span class="name">{{ p.name }}</span>
+                <span class="sku">{{ p.sku }}</span>
+            </div>
+            <div class="stock-info">
+                <span class="current">{{ p.quantity }}</span>
+                <span class="threshold">/ {{ p.low_stock_threshold }}</span>
+                <div class="progress-bar" style="width:80px;">
+                    {% widthratio p.quantity p.low_stock_threshold 100 as pct %}
+                    {% if pct > 100 %}{% widthratio 100 1 1 as pct %}{% endif %}
+                    <div class="progress-bar-fill {% if pct < 25 %}danger{% elif pct < 60 %}warning{% endif %}" style="width:{{ pct }}%"></div>
+                </div>
+                <a href="{% url 'product_detail' p.pk %}" class="btn btn-xs btn-primary"><i class="fas fa-eye"></i></a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="glass-card table-card">
+    <div class="glass-card-header">
+        <h3><i class="fas fa-clock-rotate-left" style="color:var(--accent-cyan);"></i>Recent Transactions</h3>
+        <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-ghost">View All <i class="fas fa-arrow-right"></i></a>
+    </div>
+    {% if recent_transactions %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Qty</th>
+                    <th>By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in recent_transactions %}
+                <tr>
+                    <td class="text-primary">{{ t.timestamp|date:"d M Y H:i" }}</td>
+                    <td><a href="{% url 'product_detail' t.product.pk %}">{{ t.product.name }}</a></td>
+                    <td>
+                        <span class="badge {% if t.transaction_type == 'IN' %}badge-green{% elif t.transaction_type == 'OUT' %}badge-red{% else %}badge-yellow{% endif %}">
+                            <span class="badge-dot"></span>
+                            {{ t.get_transaction_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ t.quantity }}</td>
+                    <td class="text-muted-cell">{{ t.created_by.username|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-clock-rotate-left"></i></div>
+        <h3>No Transactions Yet</h3>
+        <p>Record stock movements to see them here.</p>
+        <a href="{% url 'transaction_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Transaction</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}{{ title }} — Inventory System{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block current_page %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i></a>
+    <span class="sep">/</span>
+    <a href="{% url 'product_list' %}">Products</a>
+    <span class="sep">/</span>
+    <span class="current">{{ title }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card form-card">
+    <h2><i class="fas fa-{% if product %}edit{% else %}plus-circle{% endif %}" style="color:var(--accent-blue);"></i> {{ title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Product Name</label>
+                {{ form.name }}
+                {% if form.name.errors %}<div class="form-error"><i class="fas fa-circle-exclamation"></i> {{ form.name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.sku.id_for_label }}">SKU</label>
+                {{ form.sku }}
+                {% if form.sku.errors %}<div class="form-error"><i class="fas fa-circle-exclamation"></i> {{ form.sku.errors.0 }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.supplier.id_for_label }}">Supplier</label>
+                {{ form.supplier }}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.price.id_for_label }}">Selling Price <span class="text-muted">(₹)</span></label>
+                {{ form.price }}
+                {% if form.price.errors %}<div class="form-error"><i class="fas fa-circle-exclamation"></i> {{ form.price.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.cost.id_for_label }}">Cost Price <span class="text-muted">(₹)</span></label>
+                {{ form.cost }}
+                {% if form.cost.errors %}<div class="form-error"><i class="fas fa-circle-exclamation"></i> {{ form.cost.errors.0 }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.quantity.id_for_label }}">Initial Quantity</label>
+                {{ form.quantity }}
+                {% if form.quantity.errors %}<div class="form-error"><i class="fas fa-circle-exclamation"></i> {{ form.quantity.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.low_stock_threshold.id_for_label }}">Low Stock Threshold</label>
+                {{ form.low_stock_threshold }}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="{{ form.image_url.id_for_label }}">Image URL</label>
+            {{ form.image_url }}
+            <span class="form-help">Optional. Provide a URL for the product image.</span>
+        </div>
+        {% if form.non_field_errors %}
+        <div class="form-error" style="margin-bottom:12px;"><i class="fas fa-circle-exclamation"></i> {{ form.non_field_errors.0 }}</div>
+        {% endif %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+            <a href="{% url 'product_list' %}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

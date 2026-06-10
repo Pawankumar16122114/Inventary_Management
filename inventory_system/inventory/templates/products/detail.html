@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}{{ product.name }} — Inventory System{% endblock %}
+{% block page_title %}{{ product.name }}{% endblock %}
+{% block page_subtitle %}SKU: {{ product.sku }}{% endblock %}
+{% block current_page %}{{ product.name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i></a>
+    <span class="sep">/</span>
+    <a href="{% url 'product_list' %}">Products</a>
+    <span class="sep">/</span>
+    <span class="current">{{ product.name }}</span>
+</div>
+{% endblock %}
+
+{% block top_bar_actions %}
+<a href="{% url 'product_update' product.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> <span class="btn-label">Edit</span></a>
+<a href="#" class="btn btn-danger btn-sm" data-delete-url="{% url 'product_delete' product.pk %}" data-name="{{ product.name }}"><i class="fas fa-trash"></i> <span class="btn-label">Delete</span></a>
+<a href="{% url 'product_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> <span class="btn-label">Back</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="detail-grid">
+    <div class="glass-card detail-card">
+        <h3><i class="fas fa-info-circle" style="color:var(--accent-blue);"></i> Product Details</h3>
+        <div class="detail-row">
+            <span class="label">Name</span>
+            <span class="value">{{ product.name }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">SKU</span>
+            <span class="value" style="font-family:monospace;">{{ product.sku }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Category</span>
+            <span class="value">{{ product.category.name|default:"<span class='text-muted'>-</span>" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Supplier</span>
+            <span class="value">{{ product.supplier.name|default:"<span class='text-muted'>-</span>" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Created</span>
+            <span class="value">{{ product.created_at|date:"d M Y" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Updated</span>
+            <span class="value">{{ product.updated_at|date:"d M Y" }}</span>
+        </div>
+    </div>
+
+    <div class="glass-card detail-card">
+        <h3><i class="fas fa-chart-simple" style="color:var(--accent-cyan);"></i> Stock &amp; Pricing</h3>
+        <div class="detail-row">
+            <span class="label">Quantity</span>
+            <span class="value">
+                <span class="fw-700 {% if product.is_low_stock %}text-red{% else %}text-green{% endif %}">{{ product.quantity }}</span>
+                {% if product.is_low_stock %}<span class="badge badge-red" style="margin-left:6px;"><span class="badge-dot"></span> Low</span>{% endif %}
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Low Stock Threshold</span>
+            <span class="value">{{ product.low_stock_threshold }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Stock Level</span>
+            <span class="value" style="display:flex;align-items:center;gap:8px;max-width:160px;">
+                {% widthratio product.quantity product.low_stock_threshold|add:product.quantity 100 as pct %}
+                {% if pct > 100 %}{% widthratio 100 1 1 as pct %}{% endif %}
+                <div class="progress-bar" style="flex:1;">
+                    <div class="progress-bar-fill {% if product.is_low_stock %}danger{% elif pct < 50 %}warning{% endif %}" style="width:{{ pct|default:0 }}%"></div>
+                </div>
+                <span class="stock-pct">{{ pct|default:0 }}%</span>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Selling Price</span>
+            <span class="value fw-700">{{ product.price|currency }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Cost Price</span>
+            <span class="value">{{ product.cost|currency }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Profit Margin</span>
+            <span class="value">
+                <span class="metric-chip {% if product.profit_margin > 0 %}green{% else %}red{% endif %}">
+                    <i class="fas fa-{% if product.profit_margin > 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
+                    {{ product.profit_margin|floatformat:1 }}%
+                </span>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Stock Value</span>
+            <span class="value fw-700 text-blue">{{ product.quantity|multiply:product.cost|currency }}</span>
+        </div>
+    </div>
+
+    <div class="glass-card detail-card detail-full">
+        <h3><i class="fas fa-align-left" style="color:var(--text-muted);"></i> Description</h3>
+        <p style="color:var(--text-secondary);font-size:13px;line-height:1.7;">
+            {{ product.description|default:"<span class='text-muted'>No description provided.</span>"|linebreaksbr }}
+        </p>
+    </div>
+</div>
+
+<div class="glass-card table-card">
+    <div class="glass-card-header">
+        <h3><i class="fas fa-clock-rotate-left" style="color:var(--accent-cyan);"></i> Transaction History</h3>
+        <a href="{% url 'transaction_create' %}" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> Add</a>
+    </div>
+    {% if transactions %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <th>Notes</th>
+                    <th>By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td class="text-primary">{{ t.timestamp|date:"d M Y H:i" }}</td>
+                    <td>
+                        <span class="badge {% if t.transaction_type == 'IN' %}badge-green{% elif t.transaction_type == 'OUT' %}badge-red{% else %}badge-yellow{% endif %}">
+                            <span class="badge-dot"></span>
+                            {{ t.get_transaction_type_display }}
+                        </span>
+                    </td>
+                    <td class="fw-600 {% if t.transaction_type == 'IN' %}text-green{% elif t.transaction_type == 'OUT' %}text-red{% endif %}">
+                        {{ t.quantity }}
+                    </td>
+                    <td class="text-muted-cell">{{ t.notes|default:"-"|truncatechars:40 }}</td>
+                    <td class="text-muted-cell">{{ t.created_by.username|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-clock-rotate-left"></i></div>
+        <h3>No Transactions</h3>
+        <p>Stock movements for this product will appear here.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

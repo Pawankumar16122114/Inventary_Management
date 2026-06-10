@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}Categories — Inventory System{% endblock %}
+{% block page_title %}Categories{% endblock %}
+{% block page_subtitle %}Organise products by category{% endblock %}
+{% block current_page %}Categories{% endblock %}
+
+{% block top_bar_actions %}
+<a href="{% url 'category_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> <span class="btn-label">Add Category</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card table-card">
+    {% if categories %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Products</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in categories %}
+                <tr>
+                    <td class="text-primary fw-600">{{ c.name }}</td>
+                    <td class="text-muted-cell">{{ c.description|truncatechars:60|default:"-" }}</td>
+                    <td><span class="badge badge-blue"><span class="badge-dot"></span> {{ c.product_count }}</span></td>
+                    <td class="text-muted-cell">{{ c.created_at|date:"d M Y" }}</td>
+                    <td>
+                        <div class="action-links">
+                            <a href="{% url 'category_update' c.pk %}" class="action-btn" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="#" class="action-btn text-danger" title="Delete"
+                               data-delete-url="{% url 'category_delete' c.pk %}"
+                               data-name="{{ c.name }}"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-tags"></i></div>
+        <h3>No Categories</h3>
+        <p>Create your first category to organise products.</p>
+        <a href="{% url 'category_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Category</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

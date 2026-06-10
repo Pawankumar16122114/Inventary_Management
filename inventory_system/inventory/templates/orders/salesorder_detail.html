@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}{{ so.so_number }} — Inventory System{% endblock %}
+{% block page_title %}{{ so.so_number }}{% endblock %}
+{% block page_subtitle %}Sales Order{% endblock %}
+{% block current_page %}{{ so.so_number }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i></a>
+    <span class="sep">/</span>
+    <a href="{% url 'so_list' %}">Sales Orders</a>
+    <span class="sep">/</span>
+    <span class="current">{{ so.so_number }}</span>
+</div>
+{% endblock %}
+
+{% block top_bar_actions %}
+{% if so.status == 'DRAFT' %}
+<form method="post" action="{% url 'so_update_status' so.pk %}" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="CONFIRMED">
+    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> <span class="btn-label">Confirm</span></button>
+</form>
+{% elif so.status == 'CONFIRMED' %}
+<form method="post" action="{% url 'so_update_status' so.pk %}" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="SHIPPED">
+    <button type="submit" class="btn btn-warning btn-sm" data-confirm="Mark as shipped? Stock will be deducted.">
+        <i class="fas fa-shipping-fast"></i> <span class="btn-label">Ship</span>
+    </button>
+</form>
+{% elif so.status == 'SHIPPED' %}
+<form method="post" action="{% url 'so_update_status' so.pk %}" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="DELIVERED">
+    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check-circle"></i> <span class="btn-label">Deliver</span></button>
+</form>
+{% endif %}
+{% if so.status != 'DELIVERED' and so.status != 'CANCELLED' %}
+<form method="post" action="{% url 'so_update_status' so.pk %}" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="CANCELLED">
+    <button type="submit" class="btn btn-danger btn-sm" data-confirm="Cancel this sales order?"><i class="fas fa-ban"></i> <span class="btn-label">Cancel</span></button>
+</form>
+{% endif %}
+<a href="#" class="btn btn-danger btn-sm" data-delete-url="{% url 'so_delete' so.pk %}" data-name="{{ so.so_number }}"><i class="fas fa-trash"></i> <span class="btn-label">Delete</span></a>
+<a href="{% url 'so_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> <span class="btn-label">Back</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="detail-grid">
+    <div class="glass-card detail-card">
+        <h3><i class="fas fa-info-circle" style="color:var(--accent-purple);"></i> Order Details</h3>
+        <div class="detail-row">
+            <span class="label">SO Number</span>
+            <span class="value" style="font-family:monospace;">{{ so.so_number }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Status</span>
+            <span class="value">
+                <span class="badge {% if so.status == 'DRAFT' %}badge-gray{% elif so.status == 'CONFIRMED' %}badge-blue{% elif so.status == 'SHIPPED' %}badge-yellow{% elif so.status == 'DELIVERED' %}badge-green{% elif so.status == 'CANCELLED' %}badge-red{% endif %}">
+                    <span class="badge-dot"></span>
+                    {{ so.get_status_display }}
+                </span>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Total Amount</span>
+            <span class="value fw-700">{{ so.total_amount|currency }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Created</span>
+            <span class="value">{{ so.created_at|date:"d M Y H:i" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">By</span>
+            <span class="value">{{ so.created_by.username|default:"-" }}</span>
+        </div>
+    </div>
+
+    <div class="glass-card detail-card">
+        <h3><i class="fas fa-note-sticky" style="color:var(--text-muted);"></i> Notes</h3>
+        <p style="color:var(--text-secondary);font-size:13px;line-height:1.7;">
+            {{ so.notes|default:"<span class='text-muted'>No notes.</span>"|linebreaksbr }}
+        </p>
+    </div>
+</div>
+
+<div class="glass-card table-card">
+    <div class="glass-card-header">
+        <h3><i class="fas fa-box" style="color:var(--accent-cyan);"></i> Line Items</h3>
+    </div>
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Line Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="text-primary fw-600"><a href="{% url 'product_detail' item.product.pk %}">{{ item.product.name }}</a></td>
+                    <td class="text-muted-cell" style="font-family:monospace;">{{ item.product.sku }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.unit_price|currency }}</td>
+                    <td class="fw-600">{{ item.line_total|currency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="border-top:2px solid var(--border);">
+                    <td colspan="3"></td>
+                    <td style="font-weight:600;color:var(--text-primary);">Total</td>
+                    <td style="font-weight:700;color:var(--accent-blue);font-size:15px;">{{ so.total_amount|currency }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

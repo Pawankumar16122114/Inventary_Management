@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}Purchase Orders — Inventory System{% endblock %}
+{% block page_title %}Purchase Orders{% endblock %}
+{% block page_subtitle %}Track inbound stock orders{% endblock %}
+{% block current_page %}Purchase Orders{% endblock %}
+
+{% block top_bar_actions %}
+<a href="{% url 'po_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> <span class="btn-label">New PO</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div class="toolbar-left">
+        <form method="get" class="d-flex align-center gap-8">
+            <select name="status" class="form-control filter-select" onchange="this.form.submit()">
+                <option value="">All Statuses</option>
+                {% for key, label in pos.model.PO_STATUS_CHOICES %}
+                <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            {% if selected_status %}
+            <a href="{% url 'po_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="glass-card table-card">
+    {% if pos %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>PO #</th>
+                    <th>Supplier</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>By</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for po in pos %}
+                <tr>
+                    <td class="text-primary fw-600"><a href="{% url 'po_detail' po.pk %}">{{ po.po_number }}</a></td>
+                    <td>{{ po.supplier.name }}</td>
+                    <td class="fw-600">{{ po.total_amount|currency }}</td>
+                    <td>
+                        <span class="badge {% if po.status == 'DRAFT' %}badge-gray{% elif po.status == 'SENT' %}badge-blue{% elif po.status == 'RECEIVED' %}badge-yellow{% elif po.status == 'COMPLETED' %}badge-green{% elif po.status == 'CANCELLED' %}badge-red{% endif %}">
+                            <span class="badge-dot"></span>
+                            {{ po.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-muted-cell">{{ po.created_at|date:"d M Y" }}</td>
+                    <td class="text-muted-cell">{{ po.created_by.username|default:"-" }}</td>
+                    <td>
+                        <div class="action-links">
+                            <a href="{% url 'po_detail' po.pk %}" class="action-btn" title="View"><i class="fas fa-eye"></i></a>
+                            <a href="#" class="action-btn text-danger" title="Delete"
+                               data-delete-url="{% url 'po_delete' po.pk %}"
+                               data-name="{{ po.po_number }}"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-cart-plus"></i></div>
+        <h3>No Purchase Orders</h3>
+        <p>Create purchase orders to manage inbound stock from suppliers.</p>
+        <a href="{% url 'po_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New PO</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

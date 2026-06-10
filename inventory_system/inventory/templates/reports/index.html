@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}Reports — Inventory System{% endblock %}
+{% block page_title %}Reports &amp; Exports{% endblock %}
+{% block page_subtitle %}Analyse inventory data and export reports{% endblock %}
+{% block current_page %}Reports{% endblock %}
+
+{% block content %}
+<div class="reports-grid">
+    <div class="glass-card report-card">
+        <h3><i class="fas fa-box" style="color:var(--accent-blue);"></i> Products Report</h3>
+        <p>Full product catalogue with SKU, pricing, stock levels, and valuation.</p>
+        <div class="report-actions">
+            <a href="{% url 'export_csv' 'products' %}" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv"></i> CSV</a>
+            <a href="{% url 'export_pdf' 'products' %}" class="btn btn-sm btn-secondary"><i class="fas fa-file-pdf"></i> PDF</a>
+        </div>
+    </div>
+
+    <div class="glass-card report-card">
+        <h3><i class="fas fa-exclamation-triangle" style="color:var(--accent-red);"></i> Low Stock Report</h3>
+        <p>Products that are at or below their low-stock threshold.</p>
+        <div class="report-actions">
+            <a href="{% url 'export_csv' 'low_stock' %}" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv"></i> CSV</a>
+            <a href="{% url 'export_pdf' 'low_stock' %}" class="btn btn-sm btn-secondary"><i class="fas fa-file-pdf"></i> PDF</a>
+        </div>
+    </div>
+
+    <div class="glass-card report-card">
+        <h3><i class="fas fa-arrows-left-right" style="color:var(--accent-cyan);"></i> Transaction Log</h3>
+        <p>Complete stock movement history with dates, products, and users.</p>
+        <div class="report-actions">
+            <a href="{% url 'export_csv' 'transactions' %}" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv"></i> CSV</a>
+            <a href="{% url 'export_pdf' 'transactions' %}" class="btn btn-sm btn-secondary"><i class="fas fa-file-pdf"></i> PDF</a>
+        </div>
+    </div>
+
+    <div class="glass-card report-card">
+        <h3><i class="fas fa-chart-bar" style="color:var(--accent-purple);"></i> Inventory Summary</h3>
+        <p>{% low_stock_count as lsc %}{% total_products as tp %}{{ tp }} total products · {{ lsc }} low stock alerts</p>
+        <div style="font-size:12px;color:var(--text-secondary);">
+            <div class="detail-row" style="padding:6px 0;">
+                <span class="label">Inventory Value</span>
+                <span class="value fw-600" style="font-size:14px;">{% stock_value as sv %}{{ sv|currency }}</span>
+            </div>
+            <div class="detail-row" style="padding:6px 0;">
+                <span class="label">Potential Revenue</span>
+                <span class="value fw-600" style="font-size:14px;">{% potential_revenue as pr %}{{ pr|currency }}</span>
+            </div>
+            <div class="detail-row" style="padding:6px 0;border:none;">
+                <span class="label">Profitability</span>
+                <span class="value" style="font-size:13px;">
+                    {% stock_value as sv %}{% potential_revenue as pr %}
+                    <span class="text-green fw-600">{{ pr|currency }}</span>
+                    <span class="text-muted">on</span>
+                    <span class="fw-600">{{ sv|currency }}</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if low_stock %}
+<div class="glass-card" style="padding:24px;margin-bottom:28px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--accent-red);">
+        <i class="fas fa-exclamation-triangle"></i> Low Stock Products
+        <span class="badge badge-red" style="margin-left:auto;">{{ low_stock|length }} items</span>
+    </h3>
+    <div class="low-stock-list">
+        {% for p in low_stock %}
+        <div class="low-stock-item">
+            <div class="product-info">
+                <span class="name">{{ p.name }}</span>
+                <span class="sku">{{ p.sku }}</span>
+            </div>
+            <div class="stock-info">
+                <span class="current">{{ p.quantity }}</span>
+                <span class="threshold">/ {{ p.low_stock_threshold }}</span>
+                <div class="progress-bar" style="width:80px;">
+                    {% widthratio p.quantity p.low_stock_threshold 100 as pct %}
+                    {% if pct > 100 %}{% widthratio 100 1 1 as pct %}{% endif %}
+                    <div class="progress-bar-fill {% if pct < 25 %}danger{% elif pct < 60 %}warning{% endif %}" style="width:{{ pct }}%"></div>
+                </div>
+                <a href="{% url 'product_detail' p.pk %}" class="btn btn-xs btn-primary"><i class="fas fa-eye"></i></a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="glass-card" style="padding:24px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-layer-group" style="color:var(--accent-blue);"></i> Category-wise Stock
+    </h3>
+    {% if category_data %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Total Quantity</th>
+                    <th>Total Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in category_data %}
+                <tr>
+                    <td class="text-primary fw-600">{{ item.category__name|default:"Uncategorised" }}</td>
+                    <td>{{ item.total_qty|default:0 }}</td>
+                    <td class="fw-600">{{ item.total_value|default:0|currency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-layer-group"></i></div>
+        <h3>No Data</h3>
+        <p>Add products and categories to see category-wise reports.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

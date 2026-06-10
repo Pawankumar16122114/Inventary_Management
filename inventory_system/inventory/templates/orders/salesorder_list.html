@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}Sales Orders — Inventory System{% endblock %}
+{% block page_title %}Sales Orders{% endblock %}
+{% block page_subtitle %}Manage outbound customer orders{% endblock %}
+{% block current_page %}Sales Orders{% endblock %}
+
+{% block top_bar_actions %}
+<a href="{% url 'so_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> <span class="btn-label">New SO</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div class="toolbar-left">
+        <form method="get" class="d-flex align-center gap-8">
+            <select name="status" class="form-control filter-select" onchange="this.form.submit()">
+                <option value="">All Statuses</option>
+                {% for key, label in sos.model.SO_STATUS_CHOICES %}
+                <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            {% if selected_status %}
+            <a href="{% url 'so_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="glass-card table-card">
+    {% if sos %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>SO #</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>By</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for so in sos %}
+                <tr>
+                    <td class="text-primary fw-600"><a href="{% url 'so_detail' so.pk %}">{{ so.so_number }}</a></td>
+                    <td class="fw-600">{{ so.total_amount|currency }}</td>
+                    <td>
+                        <span class="badge {% if so.status == 'DRAFT' %}badge-gray{% elif so.status == 'CONFIRMED' %}badge-blue{% elif so.status == 'SHIPPED' %}badge-yellow{% elif so.status == 'DELIVERED' %}badge-green{% elif so.status == 'CANCELLED' %}badge-red{% endif %}">
+                            <span class="badge-dot"></span>
+                            {{ so.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-muted-cell">{{ so.created_at|date:"d M Y" }}</td>
+                    <td class="text-muted-cell">{{ so.created_by.username|default:"-" }}</td>
+                    <td>
+                        <div class="action-links">
+                            <a href="{% url 'so_detail' so.pk %}" class="action-btn" title="View"><i class="fas fa-eye"></i></a>
+                            <a href="#" class="action-btn text-danger" title="Delete"
+                               data-delete-url="{% url 'so_delete' so.pk %}"
+                               data-name="{{ so.so_number }}"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-shopping-cart"></i></div>
+        <h3>No Sales Orders</h3>
+        <p>Create sales orders to track outbound shipments.</p>
+        <a href="{% url 'so_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New SO</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

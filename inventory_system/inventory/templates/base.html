@@ -1,0 +1,123 @@
+{% load static inventory_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Inventory System{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('sidebarCollapsed')==='true'&&window.innerWidth>768){document.querySelector('.sidebar')?.classList.add('collapsed');document.querySelector('.main-content')?.classList.add('expanded')}}catch(e){}})()</script>
+
+{% if user.is_authenticated %}
+<div class="sidebar-backdrop"></div>
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+            <i class="fas fa-boxes-stacked"></i>
+        </div>
+        <div class="sidebar-brand-text">
+            <h2>Inventory</h2>
+            <span>Management System</span>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Main</div>
+            <a href="{% url 'dashboard' %}" class="nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+            <a href="{% url 'product_list' %}" class="nav-item"><i class="fas fa-box"></i><span>Products</span></a>
+            <a href="{% url 'category_list' %}" class="nav-item"><i class="fas fa-tags"></i><span>Categories</span></a>
+            <a href="{% url 'supplier_list' %}" class="nav-item"><i class="fas fa-truck"></i><span>Suppliers</span></a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Transactions</div>
+            <a href="{% url 'transaction_list' %}" class="nav-item"><i class="fas fa-arrows-left-right"></i><span>Stock Movements</span></a>
+            <a href="{% url 'po_list' %}" class="nav-item">
+                <i class="fas fa-cart-plus"></i><span>Purchase Orders</span>
+                {% pending_po_count as ppc %}{% if ppc > 0 %}<span class="nav-badge">{{ ppc }}</span>{% endif %}
+            </a>
+            <a href="{% url 'so_list' %}" class="nav-item">
+                <i class="fas fa-shopping-cart"></i><span>Sales Orders</span>
+                {% pending_so_count as psc %}{% if psc > 0 %}<span class="nav-badge">{{ psc }}</span>{% endif %}
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Reports</div>
+            <a href="{% url 'reports' %}" class="nav-item"><i class="fas fa-file-alt"></i><span>Reports &amp; Exports</span></a>
+        </div>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar">{{ user.username|first|upper }}</div>
+            <div class="user-info">
+                <div class="name">{{ user.username }}</div>
+                <div class="role">{{ user.get_role_display }}</div>
+            </div>
+            <a href="{% url 'logout' %}" class="action-btn" title="Logout" style="margin-left:auto;">
+                <i class="fas fa-right-from-bracket"></i>
+            </a>
+        </div>
+    </div>
+    <button class="sidebar-toggle-btn" title="Toggle sidebar">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+</aside>
+{% endif %}
+
+<div class="main-content">
+    {% if user.is_authenticated %}
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="page-title">
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                <p>{% block page_subtitle %}{% endblock %}</p>
+            </div>
+        </div>
+        <div class="top-bar-actions">
+            {% block top_bar_actions %}{% endblock %}
+        </div>
+    </header>
+    {% endif %}
+
+    <div class="page-content">
+        {% block breadcrumbs %}
+        {% if user.is_authenticated %}
+        <div class="breadcrumbs">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i></a>
+            <span class="sep">/</span>
+            <span class="current">{% block current_page %}{% block page_title_alt %}{% endblock %}{% endblock %}</span>
+        </div>
+        {% endif %}
+        {% endblock %}
+
+        {% if messages %}
+        <div class="toast-container">
+            {% for message in messages %}
+            <div class="toast toast-{{ message.tags }}">
+                <div class="toast-icon">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}triangle-exclamation{% else %}info-circle{% endif %}"></i>
+                </div>
+                <span>{{ message }}</span>
+                <button class="toast-close">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

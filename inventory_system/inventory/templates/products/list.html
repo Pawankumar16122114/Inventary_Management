@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load inventory_extras %}
+{% block title %}Products — Inventory System{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block page_subtitle %}Manage your inventory items{% endblock %}
+{% block current_page %}Products{% endblock %}
+
+{% block top_bar_actions %}
+<a href="{% url 'product_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> <span class="btn-label">Add Product</span></a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="search-bar">
+    <div class="search-input-group">
+        <i class="fas fa-search"></i>
+        <input type="text" name="q" class="form-control" placeholder="Search by name or SKU..." value="{{ q }}" data-search>
+    </div>
+    <select name="category" class="form-control filter-select" onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
+    {% if q or selected_category %}
+    <a href="{% url 'product_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>
+    {% endif %}
+</form>
+
+{% if q or selected_category %}
+<div class="active-filters" data-filter-chips>
+    {% if q %}<span class="filter-chip" data-param="q"><i class="fas fa-search"></i> "{{ q }}" <span class="remove">&times;</span></span>{% endif %}
+    {% if selected_category %}<span class="filter-chip" data-param="category"><i class="fas fa-tag"></i> {{ selected_category_name|default:"Selected" }} <span class="remove">&times;</span></span>{% endif %}
+</div>
+{% endif %}
+
+<div class="glass-card table-card">
+    {% if products %}
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Supplier</th>
+                    <th>Price</th>
+                    <th>Cost</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td class="text-primary">{{ p.sku }}</td>
+                    <td><a href="{% url 'product_detail' p.pk %}" class="fw-600">{{ p.name }}</a></td>
+                    <td><span class="text-muted-cell">{{ p.category.name|default:"-" }}</span></td>
+                    <td><span class="text-muted-cell">{{ p.supplier.name|default:"-" }}</span></td>
+                    <td>{{ p.price|currency }}</td>
+                    <td>{{ p.cost|currency }}</td>
+                    <td>
+                        <div class="stock-indicator">
+                            <span class="fw-600 {% if p.is_low_stock %}text-red{% endif %}">{{ p.quantity }}</span>
+                            <div class="progress-bar">
+                                {% widthratio p.quantity p.low_stock_threshold|add:p.quantity 100 as pct %}
+                                {% if pct > 100 %}{% widthratio 100 1 1 as pct %}{% endif %}
+                                <div class="progress-bar-fill {% if p.is_low_stock %}danger{% endif %}" style="width:{{ pct|default:0 }}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if p.is_low_stock %}
+                        <span class="badge badge-red"><span class="badge-dot"></span> Low</span>
+                        {% elif p.quantity == 0 %}
+                        <span class="badge badge-gray"><span class="badge-dot"></span> Out</span>
+                        {% else %}
+                        <span class="badge badge-green"><span class="badge-dot"></span> OK</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-links">
+                            <a href="{% url 'product_detail' p.pk %}" class="action-btn" title="View"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'product_update' p.pk %}" class="action-btn" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="#" class="action-btn text-danger" title="Delete"
+                               data-delete-url="{% url 'product_delete' p.pk %}"
+                               data-name="{{ p.name }}"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-box"></i></div>
+        <h3>No Products Found</h3>
+        <p>{% if q or selected_category %}Try different search criteria.{% else %}Get started by adding your first product.{% endif %}</p>
+        {% if not q and not selected_category %}
+        <a href="{% url 'product_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
