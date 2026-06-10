@@ -68,8 +68,8 @@ Inventary_management/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/inventory-management.git
-cd inventory-management
+git clone https://github.com/Pawankumar16122114/Inventary_Management.git
+cd Inventary_Management
 ```
 
 ### 2. Create a Virtual Environment
@@ -185,6 +185,12 @@ Visit **http://127.0.0.1:8000** in your browser.
 ## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+## 🔗 Repository
+
+**GitHub:** [https://github.com/Pawankumar16122114/Inventary_Management](https://github.com/Pawankumar16122114/Inventary_Management)
 
 ---
 
