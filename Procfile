@@ -1,0 +1,1 @@
+web: cd inventory_system && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn inventory_system.wsgi:application --bind 0.0.0.0:$PORT
